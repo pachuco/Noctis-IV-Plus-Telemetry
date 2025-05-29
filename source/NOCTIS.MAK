@@ -22,6 +22,7 @@ INCLUDEPATH = C:\BC.31\INCLUDE
 
 
 EXE_dependencies =  \
+ serial.obj \
  noctis-0.obj \
  noctis-1.obj \
  noctis.obj
@@ -30,6 +31,7 @@ EXE_dependencies =  \
 turbo assembler: noctis.cfg $(EXE_dependencies)
   $(TLINK) /x/i/n/c/P-/A=16/L$(LIBPATH) @&&|
 c0l.obj+
+.\bin\serial.obj+
 .\bin\noctis-0.obj+
 .\bin\noctis-1.obj+
 .\bin\noctis.obj
@@ -42,6 +44,8 @@ cl.lib
 
 
 #		*Individual File Dependencies*
+serial.obj: noctis.cfg serial.c
+
 noctis-0.obj: noctis.cfg noctis-0.cpp 
 
 noctis-1.obj: noctis.cfg noctis-1.cpp 

@@ -8,6 +8,17 @@ For a list of changes, see [source/NIVPLUS_CHANGES.TXT](source/NIVPLUS_CHANGES.T
 
 For the manual, see [manual/noctis_iv_manual.html](manual/noctis_iv_manual.html)
 
+## Telemetry?
+
+This fork adds telemetry via Karl Stenerud's [serial port library](https://github.com/kstenerud/DOS-Serial-Library).
+The extracted game data can then be used in companion application to add new features, such as sound fx or dynamic music.
+
+Telemetry data is obtainable either via real serial, or from Dosbox TCP port, as follows: serial1=nullmodem port:1234 transparent:1
+
+Noctis's serial config can be found at data\serial.ini. The default config is already suited for Dosbox use.
+
+Serial data format documentation: TODO
+
 ## Getting Noctis IV Plus to run on modern computers
 
 Noctis IV was made for MS-DOS and early Windows versions that still supported 16-bit MS-DOS executables natively, and as such, you'll need to be able to run DOS on your computer. To run Noctis IV plus on modern computers, you have three main options, in order of simplest to most complicated to setup:

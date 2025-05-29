@@ -9,6 +9,10 @@
 #include "noctis-d.h"
 #include "noctis-0.h"
 #include "noctis-2.h"
+extern "C" {
+	#include "serial.h"
+}
+
 const double deg = M_PI / 180;
 
 extern char exitflag;
