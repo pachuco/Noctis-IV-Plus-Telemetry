@@ -1,3 +1,6 @@
+#ifndef NOCTIS_D_HEADER
+#define NOCTIS_D_HEADER
+
 /*
 
 	Inclusioni del c++
@@ -184,3 +187,5 @@ struct pvlist {
 	unsigned vtxflag_2  : 1;
 	unsigned vtxflag_3  : 1;
 };
+
+#endif

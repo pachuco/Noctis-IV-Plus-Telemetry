@@ -9,9 +9,7 @@
 #include "noctis-d.h"
 #include "noctis-0.h"
 #include "noctis-2.h"
-extern "C" {
-	#include "serial.h"
-}
+#include "telemea.h"
 
 const double deg = M_PI / 180;
 
@@ -2173,6 +2171,12 @@ void main ()
 		printf ("\n550 KB are needed to run Noctis!\n");
 		return;
 	}
+	
+	int telerrcode;
+	if ((telerrcode = telemetry_startup_and_init_serial("..\\DATA\\serial.ini")) != 0) {
+		printf ("\nTelemetry startup error, code %i\n", telerrcode);
+	}
+
 
 	//tweakedVGA (X320Y200C4YPAL); // INIZIALIZZAZIONE GRAFICA.
 	_320_200_256 (); // INIZIALIZZAZIONE GRAFICA.
@@ -4368,8 +4372,8 @@ void main ()
 	remove (surface_file);
 
     allstop:
+	telemetry_shutdown();
 	_80_25_C ();
-
 	freeze ();
 }
 

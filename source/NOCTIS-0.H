@@ -1,3 +1,6 @@
+#ifndef NOCTIS_0_HEADER
+#define NOCTIS_0_HEADER
+
 extern int QUADWORDS;
 extern unsigned char far *adaptor;
 extern unsigned char far *adapted;
@@ -489,3 +492,5 @@ extern float	pp_pressure;
 extern float    pp_pulse;
 
 extern void additional_consumes (void);
+
+#endif

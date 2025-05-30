@@ -25,6 +25,7 @@ EXE_dependencies =  \
  serial.obj \
  noctis-0.obj \
  noctis-1.obj \
+ telemea.obj \
  noctis.obj
 
 #		*Explicit Rules*
@@ -34,7 +35,8 @@ c0l.obj+
 .\bin\serial.obj+
 .\bin\noctis-0.obj+
 .\bin\noctis-1.obj+
-.\bin\noctis.obj
+.\bin\noctis.obj+
+.\bin\telemea.obj
 .\bin\noctis
 		# no map file
 fp87.lib+
@@ -49,6 +51,8 @@ serial.obj: noctis.cfg serial.c
 noctis-0.obj: noctis.cfg noctis-0.cpp 
 
 noctis-1.obj: noctis.cfg noctis-1.cpp 
+
+telemea.obj: noctis.cfg telemea.cpp 
 
 noctis.obj: noctis.cfg noctis.cpp 
 
