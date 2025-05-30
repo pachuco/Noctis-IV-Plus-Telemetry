@@ -1,3 +1,5 @@
+#include "noctis-d.h"
+
 extern "C" {
 	#include "serial.h"
 }
@@ -5,6 +7,7 @@ extern "C" {
 #define STR_STARTSWITH(STR, PREFIX) (strncmp(PREFIX, STR, strlen(PREFIX)) == 0)
 
 static int serialnum_open = -1;
+static int is_clientconnected = 0;
 
 
 
@@ -14,8 +17,7 @@ static int serialnum_open = -1;
 
 
 
-
-static struct {
+typedef struct Telemetry {
 	// from perspective of environment, outside the suit
 	/*
 	float environment_gravity;
@@ -38,13 +40,24 @@ static struct {
 	/*
 		- is sun visible?
 		- what angle are you facintg sun at?
-		- how much space does it take on you FOV?
+		- how much space does it take on your FOV?
 		- is sun's turbulent surface visible?
 		- colours/palette
 		-
 	*/
-} teldat;
+} Telemetry;
+static Telemetry teldat;
 
+
+static void clear_telemetry(Telemetry* tele)
+{
+	tele->astronaut_tiredness   = -1.0f;
+	tele->astronaut_gravity     = -1.0f;
+	tele->astronaut_temperature = -1.0f;
+	tele->astronaut_pressure    = -1.0f;
+	tele->astronaut_pulse       = -1.0f;
+}
+	
 
 int telemetry_startup_and_init_serial(char *serialconfpath)
 {
@@ -53,7 +66,9 @@ int telemetry_startup_and_init_serial(char *serialconfpath)
 	int num_parsestage = 0;
 	FILE *fconf = NULL;
 	
-	memset(&teldat, 0, sizeof(teldat));
+	if (serialnum_open >= 0) return SER_ERR_ALREADY_OPEN;
+	
+	clear_telemetry(&teldat);
 	
 	if ((fconf = fopen(serialconfpath, "r")) == NULL) return -20;
 	
@@ -119,10 +134,9 @@ void telemetry_shutdown()
 {
 	int snum = serialnum_open;
 	
-	if (snum > 0) {
+	if (snum >= 0) {
 		serialnum_open = -1;
 		serial_close(snum);
-		memset(&teldat, 0, sizeof(teldat));
 	}
 }
 /*
