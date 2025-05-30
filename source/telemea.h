@@ -47,10 +47,10 @@ typedef enum Telecodeout {
 } Telecodeout;
 
 typedef enum Telecodein {
+	TCIN_HELLO,
 	// Client says hello to server and waits for TCOUT_ACKNACK.
 	// C XX
-	// where X is uint16 with TELEMETRY_VERSION, which must match between client-server
-	TCIN_HELLO,
+	// where X is uint16 with TELEMETRY_VERSION, which must match between client-server.
 	
 	TCIN_PONG,
 	// Reply to TCOUT_PING.
@@ -62,5 +62,7 @@ typedef enum Telecodein {
 
 int telemetry_startup_and_init_serial(char *serialconfpath);
 void telemetry_shutdown();
+
+void telemetry_out_debugbeep();
 
 #endif

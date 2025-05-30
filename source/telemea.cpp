@@ -1,4 +1,5 @@
 #include "noctis-d.h"
+#include "telemea.h"
 
 extern "C" {
 	#include "serial.h"
@@ -125,7 +126,7 @@ int telemetry_startup_and_init_serial(char *serialconfpath)
 	if ((sret = serial_open(val_numport, val_bps, val_databits, val_parity, val_stopbits, val_handshake)) != SER_SUCCESS)
 		return sret; // 0 to -16
 	serialnum_open = val_numport;
-	
+//telemetry_out_debugbeep();
 //char helloMsg[] = "Hello from noctis.\n"; serial_write(val_numport, helloMsg, sizeof(helloMsg));
 	return 0;
 }
@@ -136,9 +137,26 @@ void telemetry_shutdown()
 	
 	if (snum >= 0) {
 		serialnum_open = -1;
+		is_clientconnected = 0;
 		serial_close(snum);
 	}
 }
+
+
+
+void telemetry_out_debugbeep()
+{
+	char data = TCOUT_DEBUGBEEP;
+	if (serialnum_open < 0) return;
+	
+	serial_write(serialnum_open, &data, 1);
+}
+
+
+
+
+
+
 /*
 void telemetry_update_astronaut_ppstuff(float gravity, float temperature, float pressure, float pulse)
 {
