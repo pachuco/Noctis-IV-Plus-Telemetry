@@ -5,142 +5,102 @@
 
 
 // All endianess are LE!
-#define TC_NOP 0x00
-
-typedef enum Telecodeout {
-	TCOUT_ASTRONAUT_TIREDNESS = 1,
-	// C XXXX
-	// where X is float
-	TCOUT_ASTRONAUT_GRAVITY,
-	// C XXXX
-	// where X is float
-	TCOUT_ASTRONAUT_TEMPERATURE,
-	// C XXXX
-	// where X is float
-	TCOUT_ASTRONAUT_PRESSURE,
-	// C XXXX
-	// where X is float
-	TCOUT_ASTRONAUT_PULSE,
-	// C XXXX
-	// where X is float
-
-
-
-
-
-
-	TCOUT_ACKNACK = 0xF0,
-	// Responds to TCIN_HELLO.
-	// C X
-	// where X is a C-styled boolean. True if TELEMETRY_VERSION matches.
+typedef enum TelemetryOpcode {
+	CC_NOP,
+	CC_PERCEPTUAL_TIREDNESS,
+	CC_PERCEPTUAL_GRAVITY,
+	CC_PERCEPTUAL_TEMPERATURE,
+	CC_PERCEPTUAL_PRESSURE,
+	CC_PERCEPTUAL_PULSE,
 	
-	TCOUT_PING,
-	// Ping client and wait for TCIN_PONG in timely fashion.
-	// Disconnect client on timeout.
-	// C
-	
-	TCOUT_DEBUGBEEP,
-	// Send the client a ping that produces a short audible pop.
-	// Useful for checking how often a function is called.
-	// C
-	
-	// make room for another 256 codes
-	//TCOUT_EXTENDED = 0xFF,
-} Telecodeout;
-
-typedef enum Telecodein {
-	TCIN_HELLO = 1,
-	// Client says hello to server and waits for TCOUT_ACKNACK.
-	// C XX
-	// where X is uint16 with TELEMETRY_VERSION, which must match between client-server.
-	
-	TCIN_PONG,
-	// Reply to TCOUT_PING.
-	// C
-	
-	// make room for another 256 codes
-	//TCIN_EXTENDED = 0xFF,
-} Telecodein;
-
-int telemetry_startup_and_init_serial(char *serialconfpath);
-void telemetry_shutdown();
-
-void telemetry_out_debugbeep();
+	CC_HELLO,
+	CC_HELLOREPLY,
+	CC_DEBUGBEEP,
+	/////////////////////////////////CC_EXTENDED = 0xFF,
+};
 
 
 
 
-#define TELE_MAX_PACKETSIZE 16
+#define TELE_MAX_PACKETSIZE 32+1
 typedef struct {
 	unsigned char data[TELE_MAX_PACKETSIZE];
-	unsigned char bytes_wanted;
-	unsigned char bytes_written;
-	unsigned char bytes_read;
-} Telepacket;
+	int bytesWritten;
+	int bytesRead;
+} TelePacket;
 
 #ifdef TELEMEA_IMPLEMENTATION
-	int telemetry_doendianswap = 0; // unused(LE <-> LE)
+	//int telemetry_doendianswap = 0; // unused(LE <-> LE)
 	
-	void telemetry_packet_reset(Telepacket *tp) {
+	void telemetry_packet_reset(TelePacket *tp) {
 		memset(tp, 0, sizeof(*tp));
 	}
-
-	int telemetry_packet_isready(Telepacket *tp) {
-		return ((tp->bytes_wanted > 0) && (tp->bytes_wanted == tp->bytes_written));
+	
+	int telemetry_packetSize(int packtype) {
+		switch (packtype) {
+			case CC_NOP: return 1;
+			
+			case CC_PERCEPTUAL_TIREDNESS:
+			case CC_PERCEPTUAL_GRAVITY:
+			case CC_PERCEPTUAL_TEMPERATURE:
+			case CC_PERCEPTUAL_PRESSURE:
+			case CC_PERCEPTUAL_PULSE:
+				return 1 + 4;
+			
+			case CC_HELLO: return 1 + 2;
+			case CC_HELLOREPLY: return 1 + 1;
+			case CC_DEBUGBEEP: return 1;
+			
+			default: return 1;
+		}
 	}
 
 	#define _TELE_WRITE_GUTS \
 		unsigned char *pIn = (unsigned char *)&x; \
 		int i; \
-		if (tp->bytes_written + sizeof(x) > TELE_MAX_PACKETSIZE) \
-			return 0; \
-		if (tp->bytes_written + sizeof(x) > tp->bytes_wanted) \
+		if (tp->bytesWritten + sizeof(x) > TELE_MAX_PACKETSIZE) \
 			return 0; \
 		for (i=0; i < sizeof(x); i++) \
-			tp->data[tp->bytes_written++] = *pIn++; \
+			tp->data[tp->bytesWritten++] = *pIn++; \
 		return 1;
 
 	#define _TELE_READ_GUTS \
 		unsigned char *pOut = (unsigned char *)px; \
 		int i; \
-		if (!telemetry_packet_isready(tp)) \
-			return 0; \
-		if (tp->bytes_read + sizeof(*px) > TELE_MAX_PACKETSIZE) \
-			return 0; \
-		if (tp->bytes_read + sizeof(*px) > tp->bytes_wanted) \
+		if (tp->bytesRead + sizeof(*px) > tp->bytesWritten) \
 			return 0; \
 		for (i=0; i < sizeof(*px); i++) \
-			*pOut++ = tp->data[tp->bytes_read]; \
+			*pOut++ = tp->data[tp->bytesRead++]; \
 		return 1;
 
-	int telemetry_packet_write_byte(Telepacket *tp, unsigned char x)  { _TELE_WRITE_GUTS }
-	int telemetry_packet_write_word(Telepacket *tp, unsigned short x) { _TELE_WRITE_GUTS }
-	int telemetry_packet_write_dword(Telepacket *tp, unsigned long x) { _TELE_WRITE_GUTS }
-	int telemetry_packet_write_float(Telepacket *tp, float x)         { _TELE_WRITE_GUTS }
-	int telemetry_packet_write_double(Telepacket *tp, double x)       { _TELE_WRITE_GUTS }
-	int telemetry_packet_read_byte(Telepacket *tp, unsigned char *px)  { _TELE_READ_GUTS }
-	int telemetry_packet_read_word(Telepacket *tp, unsigned short *px) { _TELE_READ_GUTS }
-	int telemetry_packet_read_dword(Telepacket *tp, unsigned long *px) { _TELE_READ_GUTS }
-	int telemetry_packet_read_float(Telepacket *tp, float *px)         { _TELE_READ_GUTS }
-	int telemetry_packet_read_double(Telepacket *tp, double *px)       { _TELE_READ_GUTS }
+	int telemetry_packet_write_byte(TelePacket *tp, unsigned char x)  { _TELE_WRITE_GUTS }
+	int telemetry_packet_write_word(TelePacket *tp, unsigned short x) { _TELE_WRITE_GUTS }
+	int telemetry_packet_write_dword(TelePacket *tp, unsigned long x) { _TELE_WRITE_GUTS }
+	int telemetry_packet_write_float(TelePacket *tp, float x)         { _TELE_WRITE_GUTS }
+	int telemetry_packet_write_double(TelePacket *tp, double x)       { _TELE_WRITE_GUTS }
+	int telemetry_packet_read_byte(TelePacket *tp, unsigned char *px)  { _TELE_READ_GUTS }
+	int telemetry_packet_read_word(TelePacket *tp, unsigned short *px) { _TELE_READ_GUTS }
+	int telemetry_packet_read_dword(TelePacket *tp, unsigned long *px) { _TELE_READ_GUTS }
+	int telemetry_packet_read_float(TelePacket *tp, float *px)         { _TELE_READ_GUTS }
+	int telemetry_packet_read_double(TelePacket *tp, double *px)       { _TELE_READ_GUTS }
 
 	#undef _TELE_READ_GUTS
 	#undef _TELE_WRITE_GUTS
 #else
-	extern int telemetry_doendianswap;
+	//extern int telemetry_doendianswap;
 
-	void telemetry_packet_reset(Telepacket *tp);
-	int telemetry_packet_isready(Telepacket *tp);
-	int telemetry_packet_write_byte(Telepacket *tp, unsigned char x);
-	int telemetry_packet_write_word(Telepacket *tp, unsigned short x);
-	int telemetry_packet_write_dword(Telepacket *tp, unsigned long x);
-	int telemetry_packet_write_float(Telepacket *tp, float x);
-	int telemetry_packet_write_double(Telepacket *tp, double x);
-	int telemetry_packet_read_byte(Telepacket *tp, unsigned char *px);
-	int telemetry_packet_read_word(Telepacket *tp, unsigned short *px);
-	int telemetry_packet_read_dword(Telepacket *tp, unsigned long *px);
-	int telemetry_packet_read_float(Telepacket *tp, float *px);
-	int telemetry_packet_read_double(Telepacket *tp, double *px);
+	void telemetry_packet_reset(TelePacket *tp);
+	int telemetry_packetSize(int packtype);
+	int telemetry_packet_write_byte(TelePacket *tp, unsigned char x);
+	int telemetry_packet_write_word(TelePacket *tp, unsigned short x);
+	int telemetry_packet_write_dword(TelePacket *tp, unsigned long x);
+	int telemetry_packet_write_float(TelePacket *tp, float x);
+	int telemetry_packet_write_double(TelePacket *tp, double x);
+	int telemetry_packet_read_byte(TelePacket *tp, unsigned char *px);
+	int telemetry_packet_read_word(TelePacket *tp, unsigned short *px);
+	int telemetry_packet_read_dword(TelePacket *tp, unsigned long *px);
+	int telemetry_packet_read_float(TelePacket *tp, float *px);
+	int telemetry_packet_read_double(TelePacket *tp, double *px);
 #endif
 
 #endif

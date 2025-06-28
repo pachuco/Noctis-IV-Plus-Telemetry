@@ -31,11 +31,11 @@ typedef struct Telemetry {
 	*/
 	
 	// from perspective of suit/astronaut
-	float astronaut_tiredness;    // tiredness
-	float astronaut_gravity;      // pp_gravity
-	float astronaut_temperature;  // pp_temp
-	float astronaut_pressure;     // pp_pressure
-	float astronaut_pulse;        // pp_pulse
+	float perceptual_tiredness;    // tiredness
+	float perceptual_gravity;      // pp_gravity
+	float perceptual_temperature;  // pp_temp
+	float perceptual_pressure;     // pp_pressure
+	float perceptual_pulse;        // pp_pulse
 	
 	// miscelaneous perceptual
 	/*
@@ -52,11 +52,11 @@ static Telemetry teldat;
 
 static void clear_telemetry(Telemetry* tele)
 {
-	tele->astronaut_tiredness   = -1.0f;
-	tele->astronaut_gravity     = -1.0f;
-	tele->astronaut_temperature = -1.0f;
-	tele->astronaut_pressure    = -1.0f;
-	tele->astronaut_pulse       = -1.0f;
+	tele->perceptual_tiredness   = -1.0f;
+	tele->perceptual_gravity     = -1.0f;
+	tele->perceptual_temperature = -1.0f;
+	tele->perceptual_pressure    = -1.0f;
+	tele->perceptual_pulse       = -1.0f;
 }
 	
 
