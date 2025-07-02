@@ -2,6 +2,7 @@
 #include "noctis-d.h"
 #include "noctis-0.h"
 #include "noctis-2.h"
+#include "telepriv.h"
 // <temp> Temporary to make the code easier to mod later on
 #define FLYING_LANDER 1
 #define option_flying_lander 1

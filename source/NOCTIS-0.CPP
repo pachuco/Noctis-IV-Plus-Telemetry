@@ -41,6 +41,7 @@
 #include "noctis-d.h"
 #include "noctis-2.h"
 #include "defs.h"
+#include "telepriv.h"
 #include <dir.h>
 /*
 
@@ -6249,6 +6250,7 @@ void surrounding (char compass_on, int openhudcount)
 	pp_delta = (pp_temp - tp_temp) * 0.05; tp_temp += pp_delta;
 	pp_delta = (pp_pressure - tp_pressure) * 0.02; tp_pressure += pp_delta;
 	pp_delta = (pp_pulse - tp_pulse) * 0.01; tp_pulse += pp_delta;
+	telemetry_out_perceptualPressure(tp_pressure);
 	//unit� di debugging dell'albedo:
 	//sprintf (outhudbuffer, "GRAVITY %2.3f FG & TEMPERATURE %+3.1f@C & PRESSURE %2.3f ATM & PULSE %3.0f PPS", tp_gravity, tp_temp, tp_pressure, (float)albedo);
 	sprintf (outhudbuffer, "GRAVITY %2.3f FG & TEMPERATURE %+3.1f@C & PRESSURE %2.3f ATM & PULSE %3.0f PPS", tp_gravity, tp_temp, tp_pressure, tp_pulse);

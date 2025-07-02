@@ -10,6 +10,7 @@
 #include "noctis-0.h"
 #include "noctis-2.h"
 #include "telemea.h"
+#include "telepriv.h"
 
 const double deg = M_PI / 180;
 
@@ -2172,10 +2173,7 @@ void main ()
 		return;
 	}
 	
-	int telerrcode;
-	if ((telerrcode = telemetry_startup_and_init_serial("..\\DATA\\serial.ini")) != 0) {
-		printf ("\nTelemetry startup error, code %i\n", telerrcode);
-	}
+	telemetry_init();
 
 
 	//tweakedVGA (X320Y200C4YPAL); // INIZIALIZZAZIONE GRAFICA.
@@ -2252,7 +2250,6 @@ void main ()
 
 	do {
 		sync_start ();
-		
 		//
 		// Controllo del flag che indica quando ci si trova
 		// sulla "terrazza panoramica", il tetto dello stardrifter.
@@ -4372,7 +4369,7 @@ void main ()
 	remove (surface_file);
 
     allstop:
-	telemetry_shutdown();
+	telemetry_halt();
 	_80_25_C ();
 	freeze ();
 }

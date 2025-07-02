@@ -10,3 +10,5 @@ source/BIN/*
 
 *.zip
 modules/NOCTIS.EXE
+source/baseclient/testclient.log
+source/baseclient/testclient.exe
