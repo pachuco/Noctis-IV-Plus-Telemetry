@@ -1,3 +1,4 @@
+#include <math.h>
 #include "noctis-d.h"
 #define TELEMEA_IMPLEMENTATION
 #include "telemea.h"
@@ -141,14 +142,28 @@ void telemetry_init() {
 void telemetry_halt() {
 	if (isActive) {
 		//logClose();
+		// don't clog client with partial packets
+		while (serial_get_tx_buffered(serialPort));
+		while (serial_get_rx_buffered(serialPort));
 		serial_close(serialPort);
 		isActive = 0;
 	}
 }
 
 
-#define SEND_FLOAT(NAME) \
+int sortOfEquals(float a, float b) {
+  return (signed long)(a * 1000.0f) == (signed long)(b * 1000.0f);
+}
+#define SEND_FLOAT_EXACT_COMPARE(NAME) \
 if (teldat.NAME != NAME) { \
+	telemetry_packetWriteByte(&tp, CC_##NAME); \
+	telemetry_packetWriteFloat(&tp, NAME); \
+	serial_write_buffered(serialPort, tp.data, tp.bytesWritten); \
+	teldat.NAME = NAME; \
+	telemetry_packetClear(&tp); \
+}
+#define SEND_FLOAT_ROUGH_COMPARE(NAME) \
+if (!sortOfEquals(teldat.NAME, NAME)) { \
 	telemetry_packetWriteByte(&tp, CC_##NAME); \
 	telemetry_packetWriteFloat(&tp, NAME); \
 	serial_write_buffered(serialPort, tp.data, tp.bytesWritten); \
@@ -159,18 +174,17 @@ void telemetry_updateAll() {
 	if (isActive) {
 		TelePacket tp = {0};
 		
-		SEND_FLOAT(tiredness);
-		SEND_FLOAT(pp_gravity);
-		SEND_FLOAT(pp_temp);
-		SEND_FLOAT(pp_pressure);
-		SEND_FLOAT(pp_pulse);
-		SEND_FLOAT(tp_gravity);
-		SEND_FLOAT(tp_temp);
-		SEND_FLOAT(tp_pressure);
-		SEND_FLOAT(tp_pulse);
+		SEND_FLOAT_EXACT_COMPARE(tiredness);
+		SEND_FLOAT_EXACT_COMPARE(pp_gravity);
+		SEND_FLOAT_EXACT_COMPARE(pp_temp);
+		SEND_FLOAT_EXACT_COMPARE(pp_pressure);
+		SEND_FLOAT_EXACT_COMPARE(pp_pulse);
+		SEND_FLOAT_EXACT_COMPARE(tp_gravity);
+		SEND_FLOAT_EXACT_COMPARE(tp_temp);
+		SEND_FLOAT_ROUGH_COMPARE(tp_pressure);
+		SEND_FLOAT_EXACT_COMPARE(tp_pulse);
 	}
 }
-#undef SEND_FLOAT
 
 
 void telemetry_out_debugBeep() {

@@ -122,6 +122,7 @@ int main(int argc, char* argv[]) {
 	bool isConnected = true;
 	u_long mode = 1;
 	TelePacket tpRecv = {0};
+	bool isPacketRecvd = true;
 	
 	assert(readSockSettingFromIni("settings.ini", &socks));
 	WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -143,6 +144,7 @@ int main(int argc, char* argv[]) {
 				if (bytesRecvd > 0 && isNotEmpty && (tpRecv.bytesWritten == bytesWanted)) {
 					unsigned char cc = 0;
 					
+					isPacketRecvd = true;
 					telemetry_packetReadByte(&tpRecv, &cc);
 					switch (cc) {
 						case CC_tp_pressure: {
@@ -179,6 +181,11 @@ int main(int argc, char* argv[]) {
 			}
 		}
 		
-		SleepEx(10, 1);
+		// drain the packet queue so we don't lag behind
+		if (isPacketRecvd) {
+			
+			SleepEx(10, 1);
+		}
+		isPacketRecvd = false;
 	}
 }
