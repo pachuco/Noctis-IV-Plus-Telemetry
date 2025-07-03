@@ -9,58 +9,49 @@ extern "C" {
 
 #define STR_STARTSWITH(STR, PREFIX) (strncmp(PREFIX, STR, strlen(PREFIX)) == 0)
 
+static FILE *fDebugLog = NULL;
+
+void logOpen() {
+	if (!fDebugLog) {
+		fDebugLog = fopen(".\\deburger.txt", "w");
+	}
+}
+
+void logWrite(const char *text) {
+	if (fDebugLog) {
+		fprintf(fDebugLog, "%s", text);
+		fflush(fDebugLog);
+	}
+}
+
+void logClose() {
+	if (fDebugLog) {
+		fclose(fDebugLog);
+		fDebugLog = NULL;
+	}
+}
 
 
 
-
-
-
-
-
-typedef struct Telemetry {
-	int isActive;
-	int serialPort;
-	
-	
-	
-	// from perspective of environment, outside the suit
-	/*
-	float environment_gravity;
-	float environment_temperature;
-	int   environment_star_class;
-	float environment_star_mass;
-	int   environment_planet_class;
-	int   environment_planet_mass;
-	*/
-	float environment_pressure;    // pp_pressure
-	
-	// from perspective of suit/astronaut
-	float perceptual_tiredness;    // tiredness
-	float perceptual_gravity;      // pp_gravity
-	float perceptual_temperature;  // pp_temp
-	float perceptual_pressure;     // tp_pressure
-	float perceptual_pulse;        // pp_pulse
-	
-	// miscelaneous perceptual
-	/*
-		- is sun visible?
-		- what angle are you facintg sun at?
-		- how much space does it take on your FOV?
-		- is sun's turbulent surface visible?
-		- colours/palette
-		-
-	*/
-} Telemetry;
+#define XXX(TYPE, NAME) extern TYPE NAME;
+TELE_MEMBERS
+#undef XXX
 
 static Telemetry teldat = {0};
+static int isActive = 0;
+static int serialPort = -1;
 
 
 static void clearTelemetryData() {
-	teldat.perceptual_tiredness   = -1.0f;
-	teldat.perceptual_gravity     = -1.0f;
-	teldat.perceptual_temperature = -1.0f;
-	teldat.perceptual_pressure    = -1.0f;
-	teldat.perceptual_pulse       = -1.0f;
+	teldat.tiredness    = -1.0f;
+	teldat.pp_gravity   = -1.0f;
+	teldat.pp_temp      = -1.0f;
+	teldat.pp_pressure  = -1.0f;
+	teldat.pp_pulse     = -1.0f;
+	teldat.tp_gravity   = -1.0f;
+	teldat.tp_temp      = -1.0f;
+	teldat.tp_pressure  = -1.0f;
+	teldat.tp_pulse     = -1.0f;
 }
 	
 
@@ -135,47 +126,58 @@ static int initSerialFromIniPath(char *serialconfpath) {
 
 
 void telemetry_init() {
-	if (!teldat.isActive) {
-		int serialPort = initSerialFromIniPath("..\\DATA\\serial.ini");
+	if (!isActive) {
+		int port = initSerialFromIniPath("..\\DATA\\serial.ini");
 		
 		//logOpen();
-		if (serialPort >= 0) {
+		if (port >= 0) {
 			clearTelemetryData();
-			teldat.serialPort = serialPort;
-			teldat.isActive = 1;
+			serialPort = port;
+			isActive = 1;
 		}
 	}
 }
 
 void telemetry_halt() {
-	if (teldat.isActive) {
+	if (isActive) {
 		//logClose();
-		serial_close(teldat.serialPort);
-		teldat.isActive = 0;
+		serial_close(serialPort);
+		isActive = 0;
 	}
 }
 
 
+#define SEND_FLOAT(NAME) \
+if (teldat.NAME != NAME) { \
+	telemetry_packetWriteByte(&tp, CC_##NAME); \
+	telemetry_packetWriteFloat(&tp, NAME); \
+	serial_write_buffered(serialPort, tp.data, tp.bytesWritten); \
+	teldat.NAME = NAME; \
+	telemetry_packetClear(&tp); \
+}
+void telemetry_updateAll() {
+	if (isActive) {
+		TelePacket tp = {0};
+		
+		SEND_FLOAT(tiredness);
+		SEND_FLOAT(pp_gravity);
+		SEND_FLOAT(pp_temp);
+		SEND_FLOAT(pp_pressure);
+		SEND_FLOAT(pp_pulse);
+		SEND_FLOAT(tp_gravity);
+		SEND_FLOAT(tp_temp);
+		SEND_FLOAT(tp_pressure);
+		SEND_FLOAT(tp_pulse);
+	}
+}
+#undef SEND_FLOAT
 
 
 void telemetry_out_debugBeep() {
-	if (teldat.isActive) {
+	if (isActive) {
 		TelePacket tp = {0};
 		
 		telemetry_packetWriteByte(&tp, CC_DEBUGBEEP);
-		serial_write_buffered(teldat.serialPort, tp.data, tp.bytesWritten);
-	}
-}
-
-void telemetry_out_perceptualPressure(float val) {
-	if (teldat.isActive) {
-		TelePacket tp = {0};
-		
-		if (teldat.perceptual_pressure != val) {
-			telemetry_packetWriteByte(&tp, CC_PERCEPTUAL_PRESSURE);
-			telemetry_packetWriteFloat(&tp, val);
-			serial_write_buffered(teldat.serialPort, tp.data, tp.bytesWritten);
-			teldat.perceptual_pressure = val;
-		}
+		serial_write_buffered(serialPort, tp.data, tp.bytesWritten);
 	}
 }

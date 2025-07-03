@@ -1,23 +1,45 @@
 #ifndef TELEMEA_HEADER
 #define TELEMEA_HEADER
 
-#define TELEMETRY_VERSION 0x0000
-
+//#define TELEMETRY_VERSION 0x0000
+#define TELE_MEMBERS \
+	XXX(float, tiredness) \
+	XXX(float, pp_gravity) \
+	XXX(float, pp_temp) \
+	XXX(float, pp_pressure) \
+	XXX(float, pp_pulse) \
+	XXX(float, tp_gravity) \
+	XXX(float, tp_temp) \
+	XXX(float, tp_pressure) \
+	XXX(float, tp_pulse)
 
 // All endianess are LE!
+#define XXX(TYPE, NAME) CC_##NAME,
 typedef enum TelemetryOpcode {
 	CC_NOP,
-	CC_PERCEPTUAL_TIREDNESS,
-	CC_PERCEPTUAL_GRAVITY,
-	CC_PERCEPTUAL_TEMPERATURE,
-	CC_PERCEPTUAL_PRESSURE,
-	CC_PERCEPTUAL_PULSE,
+	TELE_MEMBERS
 	
-	CC_HELLO,
-	CC_HELLOREPLY,
 	CC_DEBUGBEEP,
 	/////////////////////////////////CC_EXTENDED = 0xFF,
 };
+#undef XXX
+
+#define XXX(TYPE, NAME) TYPE NAME;
+typedef struct Telemetry {
+	TELE_MEMBERS
+	
+	// miscelaneous perceptual
+	/*
+		- is sun visible?
+		- what angle are you facintg sun at?
+		- how much space does it take on your FOV?
+		- is sun's turbulent surface visible?
+		- colours/palette
+		-
+	*/
+} Telemetry;
+#undef XXX
+
 
 
 
@@ -44,15 +66,17 @@ typedef struct {
 		switch (packtype) {
 			case CC_NOP: return 1;
 			
-			case CC_PERCEPTUAL_TIREDNESS:
-			case CC_PERCEPTUAL_GRAVITY:
-			case CC_PERCEPTUAL_TEMPERATURE:
-			case CC_PERCEPTUAL_PRESSURE:
-			case CC_PERCEPTUAL_PULSE:
+			case CC_tiredness:
+			case CC_pp_gravity:
+			case CC_pp_temp:
+			case CC_pp_pressure:
+			case CC_pp_pulse:
+			case CC_tp_gravity:
+			case CC_tp_temp:
+			case CC_tp_pressure:
+			case CC_tp_pulse:
 				return 1 + 4;
 			
-			case CC_HELLO: return 1 + 2;
-			case CC_HELLOREPLY: return 1 + 1;
 			case CC_DEBUGBEEP: return 1;
 			
 			default: return 1;

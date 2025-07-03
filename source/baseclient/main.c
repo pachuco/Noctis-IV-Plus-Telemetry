@@ -145,11 +145,11 @@ int main(int argc, char* argv[]) {
 					
 					telemetry_packetReadByte(&tpRecv, &cc);
 					switch (cc) {
-						case CC_PERCEPTUAL_PRESSURE: {
-							float perceptPressure;
+						case CC_tp_pressure: {
+							float hudPressure;
 							
-							telemetry_packetReadFloat(&tpRecv, &perceptPressure);
-							printf("%.6f\n", perceptPressure);
+							telemetry_packetReadFloat(&tpRecv, &hudPressure);
+							printf("%.6f\n", hudPressure);
 						} break;
 						
 						case CC_DEBUGBEEP: {

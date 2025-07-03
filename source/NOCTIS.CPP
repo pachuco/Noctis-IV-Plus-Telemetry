@@ -4364,6 +4364,7 @@ void main ()
 		}
 		else
 			c = 0;
+		telemetry_updateAll();
 	} while ((c != 27) || stspeed || ip_reaching || lifter);
 
 	remove (surface_file);
