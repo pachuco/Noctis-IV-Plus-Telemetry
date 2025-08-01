@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
 	SOCKET clientSock;
 	WSADATA wsaData;
 	bool isRunning = true;
-	bool isConnected = true;
+	bool isConnected = false;
 	u_long mode = 1;
 	TelePacket tpRecv = {0};
 	
