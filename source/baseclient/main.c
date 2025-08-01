@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <SDL3/SDL.h>
+#include "graphics.h"
 #define TELEMEA_IMPLEMENTATION
 #include "../telemea.h"
 
@@ -111,7 +113,8 @@ WSAEBADF
 
 
 
-
+#define GRAPH_DEFAULTCLIWIDTH 80
+#define GRAPH_DEFAULTCLIHEIGHT 25
 
 int main(int argc, char* argv[]) {
 	SockSettings socks;
@@ -129,6 +132,29 @@ int main(int argc, char* argv[]) {
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(socks.port);
 	addr.sin_addr.s_addr = inet_addr(socks.address);
+	
+	
+	Graph_VGAFont font = {0};
+	Graph_SDL3Framebuffer fb = {0};
+	Graph_VGAConsole console = {0};
+	SDL_Palette *pal;
+	
+	assert(SDL_InitSubSystem(SDL_INIT_VIDEO));
+	
+	assert(graph_VGAFontLoadFromPath("./BLUETERM.F12", &font));
+	assert(graph_consoleSetSize(&console, &fb, &font, CNFL_9DOTCHAR, GRAPH_DEFAULTCLIWIDTH, GRAPH_DEFAULTCLIHEIGHT));
+	assert(pal = graph_framebuffGetPalettePtr(&fb));
+	graph_framebuffSetTitle(&fb, "Noctis wingman");
+	
+	// lazy grayscale
+	for (int i = 0; i < 256; i++) {
+		pal->colors[i].r = i;
+		pal->colors[i].g = i;
+		pal->colors[i].b = i;
+		pal->colors[i].a = 0xFF;
+	};
+	
+	
 	
 	while (isRunning) {
 		int bytesRecvd = 0;
@@ -175,16 +201,37 @@ int main(int argc, char* argv[]) {
 				telemetry_packetClear(&tpRecv);
 				isConnected = true;
 				printf("\nClient connected to DOSBox.\n");
-			} else {
-				printf(".");
-				SleepEx(2000, 1);
+			}
+		}
+		
+		SDL_Event event;
+		
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_EVENT_QUIT) {
+				isRunning = 0;
+			}
+			if (event.type == SDL_EVENT_KEY_DOWN) {
+				if (event.key.key == SDLK_ESCAPE) {
+					isRunning = 0;
+				}
 			}
 		}
 		
 		// drain the packet queue so we don't lag behind
-		if (bytesRecvd <= 0) {
-			
-			SleepEx(10, 1);
-		}
+		if (bytesRecvd > 0)
+			continue;
+		
+		graph_consolePrintf(&console, 25, 255, CNPRTF_NO_OVERFLOW, 15, 10, "Willy Bum-Bum's butthole factory #%d.", 3);
+		
+		graph_consoleRenderToBuf(&console, &fb);
+		graph_framebuffBlit(&fb);
+		
+		SDL_Delay(16);
 	}
+	
+	graph_consoleDestroy(&console, &fb);
+	graph_framebuffDestroy(&fb);
+	SDL_Quit();
+	
+	return 0;
 }

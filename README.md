@@ -13,7 +13,7 @@ For the manual, see [manual/noctis_iv_manual.html](manual/noctis_iv_manual.html)
 This fork adds telemetry via Karl Stenerud's [serial port library](https://github.com/kstenerud/DOS-Serial-Library).
 The extracted game data can then be used in companion application to add new features, such as sound fx or dynamic music.
 
-Telemetry data is obtainable either via real serial, or from Dosbox TCP port, as follows: serial1=nullmodem port:1234 transparent:1
+Telemetry data is obtainable either via real serial, or from Dosbox TCP port, as follows: serial1=nullmodem port:9876 transparent:1
 
 Noctis's serial config can be found at data\serial.ini. The default config is already suited for Dosbox use.
 
