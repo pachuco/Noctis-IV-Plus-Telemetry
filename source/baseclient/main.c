@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL3/SDL.h>
+#include <SDL3_net/SDL_net.h>
 #include "graphics.h"
 #define TELEMEA_IMPLEMENTATION
 #include "../telemea.h"
@@ -12,7 +13,7 @@
 
 typedef struct SockSettings {
 	char address[64];
-	int port;
+	uint16_t port;
 } SockSettings;
 
 static bool readSockSettingFromIni(char *confPath, SockSettings *pSs) {
@@ -21,6 +22,8 @@ static bool readSockSettingFromIni(char *confPath, SockSettings *pSs) {
 	int sret = 0;
 	int num_parsestage = 0;
 	FILE *fconf = NULL;
+	
+	memset(pSs, 0, sizeof(*pSs));
 	
 	if ((fconf = fopen(confPath, "r")) == NULL) return 0;
 	
@@ -49,44 +52,19 @@ static bool readSockSettingFromIni(char *confPath, SockSettings *pSs) {
 			}
 		}
 	}
+	
+	char *c = pSs->address + strlen(pSs->address) - 1;
+	if (*c == '\n' || *c == '\r') *c = 0; 
+	
 	fclose(fconf);
+	
+	
 	
 	if (num_parsestage != NUMSTAGES)
 		return 0;
 	return 1;
 }
 
-int isErrorMajor_winsock() {
-	switch(WSAGetLastError()) {
-		case WSAEWOULDBLOCK:
-		case WSAEINTR:
-		case WSAEINPROGRESS:
-		case WSAEALREADY:
-		case WSAENOBUFS:
-			return 0;
-			break;
-		default:
-			return 1;
-	}
-/*
-Maybe retry after timeout:
-WSAETIMEDOUT
-WSAEHOSTUNREACH
-WSAENETUNREACH
-WSAENETDOWN
-WSAECONNREFUSED
-WSAEHOSTDOWN
-
-Back out entirely:
-WSAECONNRESET
-WSAECONNABORTED
-WSAEDISCON
-WSAENOTCONN
-WSAEISCONN
-WSAENOTSOCK
-WSAEBADF
-*/
-}
 
 
 
@@ -98,12 +76,7 @@ WSAEBADF
 
 
 
-
-
-
-
-
-
+static Telemetry teldat = {0}; 
 
 
 
@@ -118,20 +91,20 @@ WSAEBADF
 
 int main(int argc, char* argv[]) {
 	SockSettings socks;
-	struct sockaddr_in addr = {0};
-	SOCKET clientSock;
-	WSADATA wsaData;
+	NET_Address *addr;
+	NET_StreamSocket *clientSock = NULL;
 	bool isRunning = true;
 	bool isConnected = false;
-	u_long mode = 1;
 	TelePacket tpRecv = {0};
 	
 	assert(readSockSettingFromIni("settings.ini", &socks));
-	WSAStartup(MAKEWORD(2,2), &wsaData);
-	
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(socks.port);
-	addr.sin_addr.s_addr = inet_addr(socks.address);
+	printf("%s %d\n", socks.address, socks.port);
+	assert(NET_Init());
+	addr = NET_ResolveHostname(socks.address);
+	if (NET_WaitUntilResolved(addr, -1) != 1) {
+		printf(SDL_GetError());
+		return 1;
+	}
 	
 	
 	Graph_VGAFont font = {0};
@@ -146,26 +119,38 @@ int main(int argc, char* argv[]) {
 	assert(pal = graph_framebuffGetPalettePtr(&fb));
 	graph_framebuffSetTitle(&fb, "Noctis wingman");
 	
-	// lazy grayscale
-	for (int i = 0; i < 256; i++) {
-		pal->colors[i].r = i;
-		pal->colors[i].g = i;
-		pal->colors[i].b = i;
-		pal->colors[i].a = 0xFF;
-	};
+	graph_paletteGen_RGB332(pal);
 	
 	
 	
 	while (isRunning) {
 		int bytesRecvd = 0;
 		
+		// draw
+		if (isConnected) {
+			graph_consolePrintf(&console, RGB332_INDEX(0, 255, 0), RGB332_INDEX(0, 0, 0), CNPRTF_NO_OVERFLOW, 0, GRAPH_DEFAULTCLIHEIGHT-1, "TCP connected!!");
+		} else {
+			char tp[] = "\\|/-";
+			static ts = 0;
+			graph_consolePrintf(&console, RGB332_INDEX(255, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, GRAPH_DEFAULTCLIHEIGHT-1, 
+					"%c connecting...",
+					tp[(ts+0)%4]);
+			ts = ++ts % 4;
+		}
+		
+		graph_consoleRenderToBuf(&console, &fb);
+		graph_framebuffBlit(&fb);
+		
+		
+		
+		
 		if (isConnected) {
 			int isNotEmpty = tpRecv.bytesWritten > 0;
 			int bytesWanted = isNotEmpty ? telemetry_packetSize(tpRecv.data[0]) : 1;
 			
-			bytesRecvd = recv(clientSock, &(tpRecv.data[tpRecv.bytesWritten]), (bytesWanted - tpRecv.bytesWritten), 0);
+			bytesRecvd = NET_ReadFromStreamSocket(clientSock, &(tpRecv.data[tpRecv.bytesWritten]), (bytesWanted - tpRecv.bytesWritten));
 			
-			if (bytesRecvd != SOCKET_ERROR) {
+			if (bytesRecvd != -1) {
 				tpRecv.bytesWritten += bytesRecvd;
 				
 				if (bytesRecvd > 0 && isNotEmpty && (tpRecv.bytesWritten == bytesWanted)) {
@@ -188,19 +173,24 @@ int main(int argc, char* argv[]) {
 					telemetry_packetClear(&tpRecv);
 				}
 			} else { // socket error
-				if (isErrorMajor_winsock())
-					isConnected = false;
+				NET_DestroyStreamSocket(clientSock);
+				clientSock = NULL;
+				isConnected = false;
 			}
 			
 			
 		} else { // not connected
-			clientSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-			if (connect(clientSock, (struct sockaddr*)&addr, sizeof(addr)) == 0) {
-				
-				ioctlsocket(clientSock, FIONBIO, &mode);
+			if (!clientSock)
+				clientSock = NET_CreateClient(addr, socks.port);
+			
+			int status = NET_WaitUntilConnected(clientSock, 100);
+			if (status == 1) {
 				telemetry_packetClear(&tpRecv);
 				isConnected = true;
 				printf("\nClient connected to DOSBox.\n");
+			} else if (status == -1) {
+				NET_DestroyStreamSocket(clientSock);
+				clientSock = NULL;
 			}
 		}
 		
@@ -221,14 +211,10 @@ int main(int argc, char* argv[]) {
 		if (bytesRecvd > 0)
 			continue;
 		
-		graph_consolePrintf(&console, 25, 255, CNPRTF_NO_OVERFLOW, 15, 10, "Willy Bum-Bum's butthole factory #%d.", 3);
-		
-		graph_consoleRenderToBuf(&console, &fb);
-		graph_framebuffBlit(&fb);
-		
-		SDL_Delay(16);
+		SDL_Delay(32);
 	}
 	
+	NET_Quit();
 	graph_consoleDestroy(&console, &fb);
 	graph_framebuffDestroy(&fb);
 	SDL_Quit();

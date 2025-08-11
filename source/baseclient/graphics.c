@@ -88,6 +88,43 @@ void graph_framebuffSetTitle(Graph_SDL3Framebuffer *pBuf, char *title) {
 
 
 
+void graph_palleteGen_grayscale(SDL_Palette *pal) {
+	for (int i = 0; i < 256; i++) {
+		pal->colors[i].r = i;
+		pal->colors[i].g = i;
+		pal->colors[i].b = i;
+		pal->colors[i].a = 0xFF;
+	};
+}
+
+void graph_paletteGen_RGB332(SDL_Palette *pal) {
+	for (int i = 0; i < 256; i++) {
+		// Extract RGB components from the 8-bit value
+		int r = (i >> 5) & 0x07;  // Top 3 bits (bits 7-5)
+		int g = (i >> 2) & 0x07;  // Middle 3 bits (bits 4-2)
+		int b = i & 0x03;         // Bottom 2 bits (bits 1-0)
+
+		// Scale to full 8-bit range
+		pal->colors[i].r = (r * 255) / 7;  // 3 bits: 0-7 scaled to 0-255
+		pal->colors[i].g = (g * 255) / 7;  // 3 bits: 0-7 scaled to 0-255
+		pal->colors[i].b = (b * 255) / 3;  // 2 bits: 0-3 scaled to 0-255
+		pal->colors[i].a = 0xFF;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

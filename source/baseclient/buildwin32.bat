@@ -3,12 +3,13 @@
 call getcomp rosbe
 
 set sdl3base=C:\p_files\prog\_proj\CodeCocks\3rdparty_libs\SDL3
+set sdl3netbase=C:\p_files\prog\_proj\CodeCocks\3rdparty_libs\SDL3_net
 
 set opts=-std=c11 -mconsole -O3 -s -Wall -Wextra
-set linkinc=-L%sdl3base%\lib -I%sdl3base%\inc
-set linkinc=%linkinc% -lSDL3 -lws2_32
+set linkinc=-L%sdl3base%\lib -I%sdl3base%\inc -I%sdl3netbase%\inc
+set linkinc=%linkinc% -lSDL3 -lws2_32 -liphlpapi
 
-set compiles=main.c graphics.c
+set compiles=main.c graphics.c %sdl3netbase%\src\SDL_net.c
 set errlog=.\testclient.log
 set out=.\testclient.exe
 

@@ -24,6 +24,40 @@ SDL_Palette* graph_framebuffGetPalettePtr(Graph_SDL3Framebuffer *pBuf);
 void graph_framebuffBlit(Graph_SDL3Framebuffer *pBuf);
 void graph_framebuffSetTitle(Graph_SDL3Framebuffer *pBuf, char *title);
 
+
+
+
+
+
+
+void graph_palleteGen_grayscale(SDL_Palette *pal);
+
+#define GRAYSCALE_INDEX(r, g, b) \
+    (((r) * 299 + (g) * 587 + (b) * 114) / 1000)
+
+void graph_paletteGen_RGB332(SDL_Palette *pal);
+
+#define RGB332_INDEX(r, g, b) \
+    (((((r) * 7) / 255) << 5) | \
+     ((((g) * 7) / 255) << 2) | \
+     (((b) * 3) / 255))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define GRAPH_MAXFONTHEIGHT 32
 #define GRAPH_FONTWIDTH 8
 #define COL_DONTCARE -1
