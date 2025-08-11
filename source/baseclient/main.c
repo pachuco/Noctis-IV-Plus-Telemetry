@@ -86,8 +86,63 @@ static Telemetry teldat = {0};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define GRAPH_DEFAULTCLIWIDTH 80
 #define GRAPH_DEFAULTCLIHEIGHT 25
+
+static void tui_variablePrintout(Graph_VGAConsole *pCon, Telemetry *teldat) {
+	int i = 0;
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"tiredneess  %.4f", teldat->tiredness);
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"pp_gravity  %.4f", teldat->pp_gravity);
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"pp_temp     %.4f", teldat->pp_temp);
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"pp_pressure %.4f", teldat->pp_pressure);
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"pp_pulse    %.4f", teldat->pp_pulse);
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"tp_gravity  %.4f", teldat->tp_gravity);
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"tp_temp     %.4f", teldat->tp_temp);
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"tp_pressure %.4f", teldat->tp_pressure);
+	graph_consolePrintf(pCon, RGB332_INDEX(0, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, i++,
+			"tp_pulse    %.4f", teldat->tp_pulse);			
+}
+
+static void tui_connectionGem(Graph_VGAConsole *pCon, bool isConnected) {
+	if (isConnected) {
+		graph_consolePrintf(pCon, RGB332_INDEX(0, 255, 0), RGB332_INDEX(0, 0, 0), CNPRTF_NO_OVERFLOW, 0, GRAPH_DEFAULTCLIHEIGHT-1,
+				"TCP connected!!");
+	} else {
+		char tp[] = "\\|/-";
+		static ts = 0;
+		graph_consolePrintf(pCon, RGB332_INDEX(255, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, GRAPH_DEFAULTCLIHEIGHT-1, 
+				"%c connecting...",
+				tp[(ts+0)%4]);
+		ts = ++ts % 4;
+	}
+}
 
 int main(int argc, char* argv[]) {
 	SockSettings socks;
@@ -126,24 +181,6 @@ int main(int argc, char* argv[]) {
 	while (isRunning) {
 		int bytesRecvd = 0;
 		
-		// draw
-		if (isConnected) {
-			graph_consolePrintf(&console, RGB332_INDEX(0, 255, 0), RGB332_INDEX(0, 0, 0), CNPRTF_NO_OVERFLOW, 0, GRAPH_DEFAULTCLIHEIGHT-1, "TCP connected!!");
-		} else {
-			char tp[] = "\\|/-";
-			static ts = 0;
-			graph_consolePrintf(&console, RGB332_INDEX(255, 0, 0), RGB332_INDEX(255, 255, 255), CNPRTF_NO_OVERFLOW, 0, GRAPH_DEFAULTCLIHEIGHT-1, 
-					"%c connecting...",
-					tp[(ts+0)%4]);
-			ts = ++ts % 4;
-		}
-		
-		graph_consoleRenderToBuf(&console, &fb);
-		graph_framebuffBlit(&fb);
-		
-		
-		
-		
 		if (isConnected) {
 			int isNotEmpty = tpRecv.bytesWritten > 0;
 			int bytesWanted = isNotEmpty ? telemetry_packetSize(tpRecv.data[0]) : 1;
@@ -158,12 +195,54 @@ int main(int argc, char* argv[]) {
 					
 					telemetry_packetReadByte(&tpRecv, &cc);
 					switch (cc) {
-						case CC_tp_pressure: {
-							float hudPressure;
-							
-							telemetry_packetReadFloat(&tpRecv, &hudPressure);
-							printf("%.6f\n", hudPressure);
+						case CC_tiredness: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.tiredness = var;
 						} break;
+						case CC_pp_gravity: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.pp_gravity = var;
+						} break;
+						case CC_pp_temp: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.pp_temp = var;
+						} break;
+						case CC_pp_pressure: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.pp_pressure = var;
+						} break;
+						case CC_pp_pulse: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.pp_pulse = var;
+						} break;
+						case CC_tp_gravity: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.tp_gravity = var;
+						} break;
+						case CC_tp_temp: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.tp_temp = var;
+						} break;
+						case CC_tp_pressure: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.tp_pressure = var;
+						} break;
+						case CC_tp_pulse: {
+							float var;
+							telemetry_packetReadFloat(&tpRecv, &var);
+							teldat.tp_pulse = var;
+						} break;
+						
+						
+
 						
 						case CC_DEBUGBEEP: {
 							
@@ -210,6 +289,11 @@ int main(int argc, char* argv[]) {
 		// drain the packet queue so we don't lag behind
 		if (bytesRecvd > 0)
 			continue;
+		
+		tui_variablePrintout(&console, &teldat);
+		tui_connectionGem(&console, isConnected);
+		graph_consoleRenderToBuf(&console, &fb);
+		graph_framebuffBlit(&fb);
 		
 		SDL_Delay(32);
 	}
