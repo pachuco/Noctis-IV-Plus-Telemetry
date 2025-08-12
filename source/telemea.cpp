@@ -43,17 +43,7 @@ static int isActive = 0;
 static int serialPort = -1;
 
 
-static void clearTelemetryData() {
-	teldat.tiredness    = -1.0f;
-	teldat.pp_gravity   = -1.0f;
-	teldat.pp_temp      = -1.0f;
-	teldat.pp_pressure  = -1.0f;
-	teldat.pp_pulse     = -1.0f;
-	teldat.tp_gravity   = -1.0f;
-	teldat.tp_temp      = -1.0f;
-	teldat.tp_pressure  = -1.0f;
-	teldat.tp_pulse     = -1.0f;
-}
+
 	
 
 static int initSerialFromIniPath(char *serialconfpath) {
@@ -132,7 +122,7 @@ void telemetry_init() {
 		
 		//logOpen();
 		if (port >= 0) {
-			clearTelemetryData();
+			telemetry_clearData(&telemetry);
 			serialPort = port;
 			isActive = 1;
 		}
