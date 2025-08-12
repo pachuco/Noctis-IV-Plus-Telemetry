@@ -54,17 +54,17 @@ typedef struct {
 #ifdef TELEMEA_IMPLEMENTATION
 	//int telemetry_doendianswap = 0; // unused(LE <-> LE)
 	
-  void telemetry_clearData(Telemetry *pTel) {
-    pTel->tiredness    = -1.0f;
-    pTel->pp_gravity   = -1.0f;
-    pTel->pp_temp      = -1.0f;
-    pTel->pp_pressure  = -1.0f;
-    pTel->pp_pulse     = -1.0f;
-    pTel->tp_gravity   = -1.0f;
-    pTel->tp_temp      = -1.0f;
-    pTel->tp_pressure  = -1.0f;
-    pTel->tp_pulse     = -1.0f;
-  }
+	void telemetry_clearData(Telemetry *pTel) {
+		pTel->tiredness    = -1.0f;
+		pTel->pp_gravity   = -1.0f;
+		pTel->pp_temp      = -1.0f;
+		pTel->pp_pressure  = -1.0f;
+		pTel->pp_pulse     = -1.0f;
+		pTel->tp_gravity   = -1.0f;
+		pTel->tp_temp      = -1.0f;
+		pTel->tp_pressure  = -1.0f;
+		pTel->tp_pulse     = -1.0f;
+	}
   
 	void telemetry_packetClear(TelePacket *tp) {
 		memset(tp, 0, sizeof(*tp));
@@ -129,7 +129,7 @@ typedef struct {
 #else
 	//extern int telemetry_doendianswap;
 
-  void telemetry_clearData(Telemetry *pTel);
+	void telemetry_clearData(Telemetry *pTel);
 	void telemetry_packetClear(TelePacket *tp);
 	void telemetry_packetResetRead(TelePacket *tp);
 	int telemetry_packetSize(int packtype);

@@ -269,6 +269,7 @@ int main(int argc, char* argv[]) {
 				telemetry_packetClear(&tpRecv);
 				isConnected = true;
 				printf("\nClient connected to DOSBox.\n");
+				telemetry_clearData(&telemetry);
 			} else if (status == -1) {
 				NET_DestroyStreamSocket(clientSock);
 				clientSock = NULL;
